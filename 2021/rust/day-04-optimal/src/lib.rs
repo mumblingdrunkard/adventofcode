@@ -18,10 +18,17 @@ impl<'a> Iterator for ColumnIterator<'a> {
     type Item = &'a (usize, i32);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.col < self.board.data.len() && self.row < self.board.data[self.col].len() {
-            let ret = Some(&self.board.data[self.row][self.col]);
-            self.row += 1;
-            ret
+        if self.row < self.board.data.len() && self.col < self.board.data[self.row].len() {
+            unsafe {
+                let ret = Some(
+                    self.board
+                        .data
+                        .get_unchecked(self.row)
+                        .get_unchecked(self.col),
+                );
+                self.row += 1;
+                ret
+            }
         } else {
             None
         }
@@ -64,9 +71,16 @@ impl<'a> Iterator for RowIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.col < self.board.data[self.row].len() {
-            let ret = Some(&self.board.data[self.row][self.col]);
-            self.col += 1;
-            ret
+            unsafe {
+                let ret = Some(
+                    self.board
+                        .data
+                        .get_unchecked(self.row)
+                        .get_unchecked(self.col),
+                );
+                self.col += 1;
+                ret
+            }
         } else {
             None
         }
@@ -83,7 +97,7 @@ impl<'a> Iterator for BoardRowIterator<'a> {
     type Item = RowIterator<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.row < self.board.data[0].len() {
+        if self.row < self.board.data.len() {
             let ret = Some(RowIterator {
                 col: 0,
                 row: self.row,
