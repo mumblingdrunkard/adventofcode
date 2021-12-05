@@ -1,3 +1,4 @@
+use aoc::Board;
 /// # bingo
 /// B0. Convert list of numbers to HashMap `map` with (k: index, v: value)
 /// B1. Read in boards and store as a tuple `(w: map[value], v: value)`
@@ -56,118 +57,6 @@
 use std::collections::HashMap;
 use std::{io, time};
 
-const BOARD_WIDTH: usize = 5;
-const BOARD_HEIGHT: usize = 5;
-
-type BoardData = [[(usize, i32); BOARD_WIDTH]; BOARD_HEIGHT];
-
-struct Board {
-    board: BoardData,
-}
-
-#[derive(Clone, Copy)]
-struct ColumnIterator<'a> {
-    col: usize,
-    row: usize,
-    board: &'a BoardData,
-}
-
-impl<'a> Iterator for ColumnIterator<'a> {
-    type Item = &'a (usize, i32);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.col < BOARD_WIDTH && self.row < BOARD_HEIGHT {
-            let ret = Some(&self.board[self.row][self.col]);
-            self.row += 1;
-            ret
-        } else {
-            None
-        }
-    }
-}
-
-struct BoardColumnIterator<'a> {
-    col: usize,
-    board: &'a BoardData,
-}
-
-impl<'a> Iterator for BoardColumnIterator<'a> {
-    type Item = ColumnIterator<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.col < BOARD_WIDTH {
-            let ret = Some(ColumnIterator {
-                col: self.col,
-                row: 0,
-                board: self.board,
-            });
-            self.col += 1;
-            ret
-        } else {
-            None
-        }
-    }
-}
-
-impl Board {
-    fn new() -> Board {
-        Board {
-            board: [[(0, 0); BOARD_WIDTH]; BOARD_HEIGHT],
-        }
-    }
-
-    fn iter_col<'a>(&'a self) -> BoardColumnIterator<'a> {
-        BoardColumnIterator {
-            col: 0,
-            board: &self.board,
-        }
-    }
-
-    // O(BOARD_SIZE) = O(1)
-    fn win_and_winning_number(&self) -> (usize, i32) {
-        let row_wise = self
-            .board
-            .iter()
-            .map(|r| {
-                r.iter()
-                    .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
-                    .unwrap()
-            })
-            .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
-            .unwrap();
-
-        let column_wise = self
-            .iter_col()
-            .map(|c| {
-                c.max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
-                    .unwrap()
-            })
-            .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
-            .unwrap();
-
-        if row_wise.0 < column_wise.0 {
-            *row_wise
-        } else {
-            *column_wise
-        }
-    }
-
-    // O(1)
-    fn win_and_score(&self) -> (usize, i32) {
-        let (win, winning_number) = self.win_and_winning_number();
-
-        (
-            win,
-            self.board
-                .iter()
-                .flat_map(|r| r.iter())
-                .filter(|(round, _)| round > &win) // remove marked cells
-                .map(|(_, n)| n * winning_number)
-                .sum(),
-        )
-    }
-}
-
 // O(b + n)
 fn main() -> std::io::Result<()> {
     let mut numbers = String::new();
@@ -197,22 +86,16 @@ fn main() -> std::io::Result<()> {
             break;
         }
 
-        let mut board = Board::new();
-        for r in 0..5 {
+        let data = (0..5).map(|_| {
             let mut row = String::new();
-            io::stdin().read_line(&mut row)?;
-            let row = row
-                .trim()
+            io::stdin().read_line(&mut row).unwrap();
+            row.trim()
                 .split_whitespace()
                 .map(|s| s.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>();
+                .collect::<Vec<i32>>()
+        }).flatten().map(|n| (drawn[&n], n)).collect::<Vec<(usize, i32)>>();
 
-            for (c, val) in row.into_iter().enumerate() {
-                board.board[r][c] = (drawn[&val], val); // O(1) lookup
-            }
-        }
-
-        boards.push(board);
+        boards.push(Board::from_slice(&data));
     }
 
     let now = time::Instant::now();
