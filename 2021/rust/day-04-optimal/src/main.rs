@@ -30,6 +30,7 @@ impl Board {
         }
     }
 
+    // O(BOARD_SIZE) = O(1)
     fn win_and_winning_number(&self) -> (usize, i32) {
         let row_wise = (0..BOARD_HEIGHT)
             .map(|r| {
@@ -58,6 +59,7 @@ impl Board {
         }
     }
 
+    // O(1)
     fn win_and_score(&self) -> (usize, i32) {
         let (win, winning_number) = self.win_and_winning_number();
 
@@ -65,25 +67,26 @@ impl Board {
             win,
             self.board
                 .iter()
-                .map(|(round, n)| match round > &win {
-                    true => n * winning_number,
-                    false => 0,
-                })
+                .filter(|(round, _)| round > &win) // remove marked cells
+                .map(|(_, n)| n * winning_number)
                 .sum(),
         )
     }
 }
 
+// O(b + n)
 fn main() -> std::io::Result<()> {
     let mut numbers = String::new();
     io::stdin().read_line(&mut numbers).unwrap();
 
+    // O(n)
     let numbers = numbers
         .trim()
         .split(',')
         .map(|s| s.parse::<i32>().unwrap())
         .collect::<Vec<i32>>();
 
+    // O(n)
     let drawn = numbers
         .iter()
         .enumerate()
@@ -92,6 +95,7 @@ fn main() -> std::io::Result<()> {
 
     let mut boards = vec![];
 
+    // O(b)
     loop {
         let mut buf = String::new();
         let blank = io::stdin().read_line(&mut buf)?;
@@ -110,7 +114,7 @@ fn main() -> std::io::Result<()> {
                 .collect::<Vec<i32>>();
 
             for (c, val) in row.into_iter().enumerate() {
-                board[(r, c)] = (drawn[&val], val);
+                board[(r, c)] = (drawn[&val], val); // O(1) lookup
             }
         }
 
@@ -119,6 +123,7 @@ fn main() -> std::io::Result<()> {
 
     let now = time::Instant::now();
 
+    // O(b × 1) = O(b)
     let winner = boards
         .iter()
         .map(|b| b.win_and_score())
@@ -126,6 +131,7 @@ fn main() -> std::io::Result<()> {
         .map(|(_, score)| score)
         .unwrap();
 
+    // O(b × 1) = O(b)
     let loser = boards
         .iter()
         .map(|b| b.win_and_score())
