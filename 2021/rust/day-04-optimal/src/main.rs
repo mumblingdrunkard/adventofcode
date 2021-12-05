@@ -59,8 +59,54 @@ use std::{io, time};
 const BOARD_WIDTH: usize = 5;
 const BOARD_HEIGHT: usize = 5;
 
+type BoardData = [[(usize, i32); BOARD_WIDTH]; BOARD_HEIGHT];
+
 struct Board {
-    board: [[(usize, i32); BOARD_WIDTH]; BOARD_HEIGHT],
+    board: BoardData,
+}
+
+#[derive(Clone, Copy)]
+struct ColumnIterator<'a> {
+    col: usize,
+    row: usize,
+    board: &'a BoardData,
+}
+
+impl<'a> Iterator for ColumnIterator<'a> {
+    type Item = &'a (usize, i32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.col < BOARD_WIDTH && self.row < BOARD_HEIGHT {
+            let ret = Some(&self.board[self.row][self.col]);
+            self.row += 1;
+            ret
+        } else {
+            None
+        }
+    }
+}
+
+struct BoardColumnIterator<'a> {
+    col: usize,
+    board: &'a BoardData,
+}
+
+impl<'a> Iterator for BoardColumnIterator<'a> {
+    type Item = ColumnIterator<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.col < BOARD_WIDTH {
+            let ret = Some(ColumnIterator {
+                col: self.col,
+                row: 0,
+                board: self.board,
+            });
+            self.col += 1;
+            ret
+        } else {
+            None
+        }
+    }
 }
 
 impl Board {
@@ -70,32 +116,39 @@ impl Board {
         }
     }
 
+    fn iter_col<'a>(&'a self) -> BoardColumnIterator<'a> {
+        BoardColumnIterator {
+            col: 0,
+            board: &self.board,
+        }
+    }
+
     // O(BOARD_SIZE) = O(1)
     fn win_and_winning_number(&self) -> (usize, i32) {
-        let row_wise = (0..BOARD_HEIGHT)
+        let row_wise = self
+            .board
+            .iter()
             .map(|r| {
-                (0..BOARD_WIDTH)
-                    .map(|c| self.board[r][c])
+                r.iter()
                     .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
                     .unwrap()
             })
             .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
             .unwrap();
 
-        let column_wise = (0..BOARD_WIDTH)
+        let column_wise = self
+            .iter_col()
             .map(|c| {
-                (0..BOARD_HEIGHT)
-                    .map(|r| self.board[r][c])
-                    .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
+                c.max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
                     .unwrap()
             })
             .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
             .unwrap();
 
         if row_wise.0 < column_wise.0 {
-            row_wise
+            *row_wise
         } else {
-            column_wise
+            *column_wise
         }
     }
 
@@ -117,7 +170,6 @@ impl Board {
 
 // O(b + n)
 fn main() -> std::io::Result<()> {
-
     let mut numbers = String::new();
     io::stdin().read_line(&mut numbers).unwrap();
 
