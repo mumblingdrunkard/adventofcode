@@ -7,6 +7,7 @@ pub struct Board {
     data: BoardData,
 }
 
+/// Iterator over a single column of a `Board`
 pub struct ColumnIterator<'a> {
     col: usize,
     row: usize,
@@ -27,6 +28,7 @@ impl<'a> Iterator for ColumnIterator<'a> {
     }
 }
 
+/// Iterator over `ColumnIterator`s for all columns of a `Board`
 pub struct BoardColumnIterator<'a> {
     col: usize,
     board: &'a Board,
@@ -50,6 +52,7 @@ impl<'a> Iterator for BoardColumnIterator<'a> {
     }
 }
 
+/// Iterator over a single row of a `Board`
 pub struct RowIterator<'a> {
     col: usize,
     row: usize,
@@ -70,6 +73,7 @@ impl<'a> Iterator for RowIterator<'a> {
     }
 }
 
+/// Iterator over `RowIterator`s for all rows of a `Board`
 pub struct BoardRowIterator<'a> {
     row: usize,
     board: &'a Board,
@@ -94,12 +98,17 @@ impl<'a> Iterator for BoardRowIterator<'a> {
 }
 
 impl Board {
+    /// Creates a new, empty `Board`
     pub fn new() -> Board {
         Board {
             data: [[(0, 0); BOARD_WIDTH]; BOARD_HEIGHT],
         }
     }
 
+    /// Creates a board from a slice
+    ///
+    /// E.g. for board of width and height 2
+    /// [1, 2, 3, 4] -> [[1, 2], [3, 4]]
     pub fn from_slice(data: &[(usize, i32)]) -> Board {
         let mut board = Board::new();
 
@@ -116,6 +125,7 @@ impl Board {
         board
     }
 
+    /// Returns an iterator over the columns of the board
     pub fn iter_col<'a>(&'a self) -> BoardColumnIterator<'a> {
         BoardColumnIterator {
             col: 0,
@@ -123,6 +133,7 @@ impl Board {
         }
     }
 
+    /// Returns an iterator over the rows of the board
     pub fn iter_row<'a>(&'a self) -> BoardRowIterator<'a> {
         BoardRowIterator {
             row: 0,
@@ -130,7 +141,7 @@ impl Board {
         }
     }
 
-    // O(BOARD_SIZE) = O(1)
+    /// Calculates the winning round and the winning number of the board
     fn win_and_winning_number(&self) -> (usize, i32) {
         let row_wise = self
             .iter_row()
@@ -157,7 +168,7 @@ impl Board {
         }
     }
 
-    // O(1)
+    /// Calculates the winning round and the final score of the board
     pub fn win_and_score(&self) -> (usize, i32) {
         let (win, winning_number) = self.win_and_winning_number();
 

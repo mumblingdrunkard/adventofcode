@@ -1,4 +1,7 @@
 use aoc::Board;
+use std::collections::HashMap;
+use std::{io, time};
+
 /// # bingo
 /// B0. Convert list of numbers to HashMap `map` with (k: index, v: value)
 /// B1. Read in boards and store as a tuple `(w: map[value], v: value)`
@@ -52,66 +55,53 @@ use aoc::Board;
 ///
 /// This step is self explanatory. The board that takes the fewest turns to win is the winning
 /// board and vice versa.
-
-///
-use std::collections::HashMap;
-use std::{io, time};
-
-// O(b + n)
 fn main() -> std::io::Result<()> {
     let mut numbers = String::new();
     io::stdin().read_line(&mut numbers).unwrap();
 
-    // O(n)
+    let now = time::Instant::now();
+
+    // Read in numbers and store as HashMap of (number, index)
     let numbers = numbers
         .trim()
         .split(',')
-        .map(|s| s.parse::<i32>().unwrap())
-        .collect::<Vec<i32>>();
-
-    // O(n)
-    let drawn = numbers
-        .iter()
         .enumerate()
-        .map(|(i, n)| (*n, i))
+        .map(|(i, s)| (s.parse::<i32>().unwrap(), i))
         .collect::<HashMap<i32, usize>>();
 
-    let mut boards = vec![];
+    // Read in 100 boards, calculate winning round and score, collect to Vec
+    let boards = (0..100)
+        .map(|_| {
+            let mut buf = String::new();
+            let _ = io::stdin().read_line(&mut buf).unwrap(); // skip a line
 
-    // O(b)
-    loop {
-        let mut buf = String::new();
-        let blank = io::stdin().read_line(&mut buf)?;
-        if blank == 0 {
-            break;
-        }
+            let data = (0..5)
+                .map(|_| {
+                    let mut row = String::new();
+                    io::stdin().read_line(&mut row).unwrap();
+                    row.trim()
+                        .split_whitespace()
+                        .map(|s| s.parse::<i32>().unwrap())
+                        .collect::<Vec<i32>>()
+                })
+                .flatten()
+                .map(|n| (numbers[&n], n))
+                .collect::<Vec<(usize, i32)>>();
 
-        let data = (0..5).map(|_| {
-            let mut row = String::new();
-            io::stdin().read_line(&mut row).unwrap();
-            row.trim()
-                .split_whitespace()
-                .map(|s| s.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>()
-        }).flatten().map(|n| (drawn[&n], n)).collect::<Vec<(usize, i32)>>();
+            Board::from_slice(&data)
+        })
+        .map(|b| b.win_and_score()) // most computation happens here
+        .collect::<Vec<(usize, i32)>>();
 
-        boards.push(Board::from_slice(&data));
-    }
 
-    let now = time::Instant::now();
-
-    // O(b × 1) = O(b)
     let winner = boards
         .iter()
-        .map(|b| b.win_and_score())
         .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
         .map(|(_, score)| score)
         .unwrap();
 
-    // O(b × 1) = O(b)
     let loser = boards
         .iter()
-        .map(|b| b.win_and_score())
         .max_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap())
         .map(|(_, score)| score)
         .unwrap();
