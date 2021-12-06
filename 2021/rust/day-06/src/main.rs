@@ -1,10 +1,10 @@
-use aoc::{fast_exp_mod, Col9, Mat9};
+use aoc::{fast_exp, Col9, Mat9};
 use num_bigint::BigUint;
 use std::{convert::TryInto, io, time};
 
 fn main() {
     // Read in fish
-    let big_prime: BigUint = BigUint::from(18446744073709551557u64);
+    // let big_prime: BigUint = BigUint::from(340282366920938463463374607431768211297u128);
 
     let mut fish = String::new();
     let _ = io::stdin().read_line(&mut fish);
@@ -42,9 +42,9 @@ fn main() {
     let mat = Mat9::from(mat);
 
     // Calculate the matrix for 256 days
-    let mat = fast_exp_mod(mat.clone(), 80, &big_prime);
+    let mat = fast_exp(mat.clone(), 256);
 
-    let res: BigUint = mat.col_mul_mod(&fish, &big_prime).iter_column().sum::<BigUint>() % big_prime;
+    let res: BigUint = mat.col_mul(&fish).iter_column().sum::<BigUint>();
 
     let elapsed = now.elapsed();
 
