@@ -45,7 +45,7 @@ impl<'a> Iterator for BoardColumnIterator<'a> {
     type Item = ColumnIterator<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.col < self.board.data.len() {
+        if self.col < self.board.data[0].len() {
             let ret = Some(ColumnIterator {
                 col: self.col,
                 row: 0,
