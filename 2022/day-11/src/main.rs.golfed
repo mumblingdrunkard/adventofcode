@@ -1,0 +1,46 @@
+fn simulate(movements: impl Iterator<Item = char>, rope_length: usize) -> usize {
+    use std::collections::HashSet;
+    movements
+        .scan(vec![(0, 0); rope_length], |rope, dir| {
+            let new_head = match dir {
+                'U' => (rope[0].0 + 1, rope[0].1),
+                'D' => (rope[0].0 - 1, rope[0].1),
+                'R' => (rope[0].0, rope[0].1 + 1),
+                _ => (rope[0].0, rope[0].1 - 1),
+            };
+
+            *rope = [new_head]
+                .into_iter()
+                .chain(rope[1..].iter().scan(new_head, |head, tail| {
+                    *head = match ((head.0 - tail.0) as i32, (head.1 - tail.1) as i32) {
+                        (-1..=1, -1..=1) => (0, 0),                           // touching
+                        (v, u) => (tail.0 + v.signum(), tail.1 + u.signum()), // catch up
+                    };
+                    Some(*head)
+                }))
+                .collect::<Vec<_>>();
+
+            Some(rope[rope.len() - 1]) // yield the updated tail
+        })
+        .chain([(0, 0)].into_iter()) // ensure starting position is included
+        .collect::<HashSet<_>>()
+        .len()
+}
+
+fn main() {
+    let input = std::fs::read_to_string("./input").unwrap();
+
+    let movements = input.lines().flat_map(|line| {
+        vec![
+            line.chars().next().unwrap();
+            line.split_whitespace()
+                .nth(1)
+                .unwrap()
+                .parse::<usize>()
+                .unwrap()
+        ]
+    });
+
+    println!("part 1: {}", simulate(movements.clone(), 2));
+    println!("part 2: {}", simulate(movements, 10));
+}
